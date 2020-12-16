@@ -1,0 +1,58 @@
+! Set the cursor size
+Xcursor.size: 50
+
+! Set the dpi, and other font stuff
+Xft.dpi:	220
+Xft.autohint:	0
+Xft.lcdfilter:	lcddefault
+Xft.hintstyle:	hintslight
+Xft.hinting:	1
+Xft.antialias:	1
+
+! Xterm stuff
+XTerm*foreground: #FFFFFF
+XTerm*background: #2b2b2b
+UI-Console Error: AttachCoreLib() Error: failed to find Mu
+XTerm*vt100.translations: #override \
+    Shift Ctrl <Key> C: copy-selection(CLIPBOARD) \n\
+    Shift Ctrl <Key> V: insert-selection(CLIPBOARD)
+
+
+XTerm*renderFont: true
+XTerm*faceName: Source Code Pro Medium
+XTerm*faceSize: 10
+!XTerm*faceName: DejaVu Sans Mono
+!XTerm*faceSize: 11
+!XTerm*faceName: xft:terminus:size=10:antialias=false
+!URxvt*font:xft:Termiinus:pixelsize=30
+!xterm*font: 7x13
+
+!tango color scheme
+xterm*color0: #1e1e1e
+xterm*color1: #cc0000
+xterm*color2: #4e9a06
+xterm*color3: #c4a000
+xterm*color4: #3465a4
+xterm*color5: #75507b
+xterm*color6: #0b939b
+xterm*color7: #d3d7cf
+xterm*color8: #555753
+xterm*color9: #ef2929
+xterm*color10: #8ae234
+xterm*color11: #fce94f
+xterm*color12: #729fcf
+xterm*color13: #ad7fa8
+xterm*color14: #00f5e9
+xterm*color15: #eeeeec
+
+! fix for weird meta characters. Problem with emacs -nw
+xterm*metaSendsEscape:True 
+
+! double-click to select whole URLs :D
+xterm*charClass: 33:48,36-47:48,58-59:48,61:48,63-64:48,95:48,126:48
+
+! right hand side scrollbar...
+xterm*rightScrollBar: true
+xterm*ScrollBar: true
+
+
