@@ -1,4 +1,4 @@
-if [ `xrandr | grep \* | cut -d' ' -f4` == 3200x1800 ]; then 
+if [ $_CONFIG_ENV_TYPE == laptop ]
   # QHD+ 13" laptop settings
   # initialise X resource database
   xrdb -load ~/.Xresources
