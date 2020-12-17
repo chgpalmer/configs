@@ -47,6 +47,7 @@
 (define-key global-map (kbd "M-g M-h") 'diff-hl-mode)
 (define-key global-map (kbd "M-g M-;") 'diff-hl-previous-hunk)
 (define-key global-map (kbd "M-g M-'") 'diff-hl-next-hunk)
+(global-diff-hl-mode)
 (diff-hl-flydiff-mode)
 (diff-hl-amend-mode)
 
@@ -412,7 +413,7 @@ Position the cursor at it's beginning, according to the current mode."
 
 
 (defvar style-count 0)
-(defvar style-count-max 1)
+(defvar style-count-max 2)
 
 (defun style-cycle ()
   "Function to cycle through styles."
@@ -425,12 +426,13 @@ Position the cursor at it's beginning, according to the current mode."
 (defun style-select (num)
   "Function to select tab and width settings based off NUM."
   "0 => Indent 2 style"
-  "1 => Kernel style"
+  "1 => Indent 4 style"
+  "2 => Kernel style"
   (interactive)
   (if (eq num 0)
       (progn
         (message "indent-2 code style")
-        (setq c-default-style "linux") 
+        (setq c-default-style "linux")
         (c-set-offset 'substatement-open 0) ; indented braces are evil
         (c-set-offset 'case-label '+) ; normal case statement indenting!
         (setq c-basic-offset 2)
@@ -440,10 +442,21 @@ Position the cursor at it's beginning, according to the current mode."
         (column-marker-1 79)))
   (if (eq num 1)
       (progn
+        (message "indent-4 code style")
+        (setq c-default-style "linux")
+        (c-set-offset 'substatement-open 0) ; indented braces are evil
+        (c-set-offset 'case-label '+) ; normal case statement indenting!
+        (setq c-basic-offset 4)
+        (setq c-indent-level 4)
+        (setq tab-width 4)
+        (setq indent-tabs-mode nil)
+        (column-marker-1 100)))
+  (if (eq num 2)
+      (progn
         (message "kernel code style")
         (setq c-default-style "linux")
         (c-set-offset 'substatement-open 0)
-        (c-set-offset 'case-label '+) 
+        (c-set-offset 'case-label '+)
         (setq c-basic-offset 8)
         (setq c-indent-level 8)
         (setq tab-width 8)
