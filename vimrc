@@ -70,9 +70,18 @@ set nostartofline       " tries to go to the same point when moving between
                         "  lines, breaking compatibility with vi but who cares
 set backspace=indent,eol,start  " backspace through newlines in insert mode etc...
 
+" # Highlight column 80
+highlight ColorColumn ctermbg=magenta
+call matchadd('ColorColumn', '\%81v', 100)
+
 " # Trailing whitespace
 highlight ExtraWhitespace ctermbg=red guibg=red
 match ExtraWhitespace /\s\+$/
+autocmd BufWinEnter * match ExtraWhitespace /\s\+$/
+autocmd InsertEnter * match ExtraWhitespace /\s\+\%#\@<!$/
+autocmd InsertLeave * match ExtraWhitespace /\s\+$/
+autocmd BufWinLeave * call clearmatches()
+
 
 " ################################################
 " # Plugins
