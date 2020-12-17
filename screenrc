@@ -1,0 +1,25 @@
+# Enable mouse scrolling and scroll bar history scrolling
+termcapinfo xterm* ti@:te@
+term xterm #fixes issue with vim and ctrl-arrows: https://unix.stackexchange.com/questions/6992/fixing-ctrl-in-vim-under-gnu-screen
+
+autodetach on 
+hardstatus on
+startup_message off 
+shelltitle 'bash' #fixes vim doing strange things with ctrl+arrows
+
+hardstatus alwayslastline 
+hardstatus string '%S %{gk}[%{wk}%?%-Lw%?%{=b kR}(%{W}%n*%f %t%?(%u)%?%{=b kR})%{= w}%?%+Lw%?%? %{g}][%{d}%l%{g}][ %{= w}%Y/%m/%d %0C:%s%a%{g} ]%{W}'
+
+# Change escape from Ctrl-A to Ctrl-j
+# enter copy mode with ctrl-j [
+# then scroll up/down with ctrl-u ctrl-d
+escape ^Jj
+
+defscrollback 10000
+altscreen on #https://superuser.com/questions/137714/using-screen-commands-like-less-and-man-dont-clear-the-screen-afterwards
+
+# moving to screen 0 is a drag
+bind c screen 1
+bind ^c screen 1
+bind 0 select 10
+screen 1
