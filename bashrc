@@ -1,20 +1,40 @@
-#2345678901234567890123456789012345678901234567890123456789012345678901234567890
 ################################################################################
 # .bashrc
 ################################################################################
-# Sources:
-# https://www.ukuug.org/events/linux2003/papers/bash_tips/
 
+
+# Session variables/settings
+################################################################################
 export EDITOR=vi
+shopt -s checkwinsize # stops the prompt occasionally eating itself
+shopt -s histappend # append session HIST to HISTFILE, possibly not needed with 'history -a' in PROMPT_COMMAND, but it won't hurt
+HISTSIZE=20000 # history lines available in session
+HISTFILESIZE=100000 # total history lines stored
+HISTCONTROL=ignoredups # dont store line if same as prev (session) line
 
-# this allows passing arbitrary commands to be executed, useful for magic sshing!
-if ! [ -z $_BASHRC_CUSTOM_CMD ]; then
-  eval $_BASHRC_CUSTOM_CMD
+
+# Do user specific stuff if file exits
+################################################################################
+if [ -f /home/$USER/.bash_x ]; then
+  source /home/$USER/.bash_x
 fi
 
-# Colouring command line things
-##################################################
+
+# Aliases
+################################################################################
+
+# Reload bashrc
+alias rebash="unalias -a; source /home/$USER/.bashrc"
+alias rebashrc="unalias -a; source /home/$USER/.bashrc"
+
+# Sudo/su
 alias sudo='sudo ' # makes sudo xyz also alias
+alias sume="su -c '/bin/bash --rcfile ~$USER/.bashrc -i'" # su with current user bashrc
+
+# System
+alias psef="ps -ef | head -n1; ps -ef | tail -n+2"
+
+# Grep
 alias gr='grep -r --color=always --exclude="TAGS" --exclude="tags" --exclude-dir="build"'
 alias grep='grep --color=auto --exclude="TAGS" --exclude="tags"'
 alias grepc='grep --color=always --exclude="TAGS" --exclude="tags"'
@@ -28,27 +48,33 @@ alias gr='grep_exclude --color=always -r' #some servers don't like recursive ali
 alias grepc='grep_exclude --color=always'
 alias egrep='egrep --color=auto'
 alias egrepc='egrep --color=always'
+
+# Less
 alias less='less -R'              # print ANSI colours when piped from grepc
-alias la='ls -lah --color=tty'
+alias la='ls -lhrta --color=tty'
 alias ll='ls -lhrt --color=tty'
 alias ls='ls --color=tty'
-alias tree='tree -C'
-alias tree1='tree -C -L 1'
-alias tree2='tree -C -L 2'
-alias tree3='tree -C -L 3'
-alias src='cd ~/src; ll'
-export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01' # colour gcc v4.9+
-alias g++="g++ -fdiagnostics-color=always
-alias gcc="g++ -fdiagnostics-color=always
 
-#alias vim='if $(hash gvim 2>/dev/null); then gvim; else vim; fi;'
-#alias which='alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde'
-#alias ssh='ssh -X'
-#alias ssh="/home/$USER/bin/sshwait"
-alias suc="su -c '/bin/bash --rcfile ~$USER/.bashrc -i'" 
-alias vimt='vim -c "NERDTree" $1'
+# Directory shortcuts
+alias src='cd /home/$USER/src; if [ $(ll | wc -l) -gt 20 ]; then ll | head -n20; echo "..."; else ll; fi'
+
+# Misc colouring
+export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01' # colour gcc v4.9+
+alias g++="g++ -fdiagnostics-color=always"
+alias gcc="g++ -fdiagnostics-color=always"
+alias tree='tree -C'
+alias cdif='diff --color=always'
 if $(hash colordiff 2>/dev/null); then alias cdiff='colordiff'; fi
+
+# Vim
+alias vi='vim'
+alias vimt='vim -c "NERDTree" $1'
+
+# Mercurial
 alias hglog='hg log --style compact -G'
+alias hgcommitlist='hg log --template "{author|person}\n" | sort | uniq -c | sort -nr'
+
+# Git
 alias gshow="git show"
 alias gdif="git diff"
 alias gstag="git diff --staged"
@@ -63,85 +89,27 @@ alias glogp="git log --graph --all --decorate --color -p"
 alias glogme="git log --graph --all --decorate --color --author $USER"
 alias gitlong='git log --stat'
 alias gitqrefresh='git commit -a --fixup HEAD; git rebase -i --autosquash HEAD~2'
-alias sume="su -c '/bin/bash --rcfile /home/$USER/.bashrc -i'"
+
+# dd progress bar
 alias dd='function __myalias() { if dd if=/dev/zero of=/dev/zero bs=1MB count=1 status=progress >/dev/null 2>&1; then dd status=progress $@; else dd $@; fi; unset -f __myalias; }; __myalias'
+
+# Date
 alias dateF="date +\"%Y-%m-%d_%H-%M\""
-alias rebashrc="unalias -a; source /home/$USER/.bashrc"
-alias lynx='lynx -accept_all_cookies -vikeys -number_links'
-alias hgcommitlist='hg log --template "{author|person}\n" | sort | uniq -c | sort -nr'
+alias dateFS='date +"%Y-%m-%d_%H-%M-%S"'
+
+# Wifi commands
 alias wifi-tui="nmtui"
 alias wifi-gui="nm-connection-editor"
 alias wifi-applet="nm-applet"
-alias psef="ps -ef | head -n1; ps -ef | tail -n+2"
-alias gby="gatsby"
 
-alias vi='vim'
-#alias vim='if $(hash gvim 2>/dev/null); then gvim; else vim; fi;'
-#alias which='alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde'
-#alias ssh='ssh -X'
-#alias ssh="/home/$USER/bin/sshwait" 
-alias vimt='vim -c "NERDTree" $1'
-alias cdif='diff --color=always'
-if $(hash colordiff 2>/dev/null); then alias cdiff='colordiff'; fi
-alias hglog='hg log --style compact -G'
-alias gshow="git show"
-alias gdif="git diff"
-alias gstag="git diff --staged"
-alias gpull="git pull --rebase"
-alias gcom="git commit"
-alias gammend="git commit --amend"
-alias greb="git rebase"
-alias grebi="git rebase -i"
-alias gitlog="git log --graph --all --decorate --color"
-alias glog="git log --graph --all --decorate --color"
-alias glogp="git log --graph --all --decorate --color -p"
-alias glogme="git log --graph --all --decorate --color --author $USER"
-alias gitlong='git log --stat'
-alias gitqrefresh='git commit -a --fixup HEAD; git rebase -i --autosquash HEAD~2'
-alias sume="su -c '/bin/bash --rcfile /home/$USER/.bashrc -i'"
-alias dd='function __myalias() { if dd if=/dev/zero of=/dev/zero bs=1MB count=1 status=progress >/dev/null 2>&1; then dd status=progress $@; else dd $@; fi; unset -f __myalias; }; __myalias'
-alias dateF="date +\"%Y-%m-%d_%H-%M\""
-alias rebash="unalias -a; source /home/$USER/.bashrc"
-alias rebashrc="unalias -a; source /home/$USER/.bashrc"
-alias tailend='ls -rt -1 | tail -n1'
+# Misc
+alias gby="gatsby"
 alias lynx='lynx -accept_all_cookies -vikeys -number_links'
 alias glynx='lynx -accept_all_cookies google.com -vikeys -number_links'
-alias hgcommitlist='hg log --template "{author|person}\n" | sort | uniq -c | sort -nr'
-alias src='cd /home/$USER/src; if [ $(ll | wc -l) -gt 20 ]; then ll | head -n20; echo "..."; else ll; fi'
 
-scr () {
-  host_name=$1
-  screen_name=$2
-  if ! [ -z $DESKTOP_SESSION ] || ! [ -z $_SSH_FROM_GUI ]; then
-    ssh $host_name -t "_SSH_FROM_GUI=1 SCREEN_NAME=$screen_name screen -DR" $screen_name
-  else
-    ssh $host_name -t "SCREEN_NAME=$screen_name screen -DR" $screen_name
-  fi
-}
-
-# Do once things
-##################################################
-shopt -s checkwinsize # stops the prompt occasionally eating itself
-shopt -s histappend # append session HIST to HISTFILE, possibly not needed with 'history -a' in PROMPT_COMMAND, but it won't hurt
-HISTSIZE=20000 # history lines available in session
-HISTFILESIZE=100000 # total history lines stored
-HISTCONTROL=ignoredups # dont store line if same as prev (session) line
-
-export PATH=$PATH:/home/$USER/.local/bin
-
-# Do user specific stuff if file exits
-##################################################
-if [ -f /home/$USER/.bash_x ]; then
-  source /home/$USER/.bash_x
-fi
-
-# Terminal title
-##################################################
-#PROMPT_COMMAND='echo -ne "\033]0;$(hostname)\007"' # terminal title = hostname
-#PROMPT_COMMAND='echo -ne "\033]0;${USER}@${HOSTNAME%%.*}:${PWD/#$HOME/~}\007"'
 
 # Prompt!
-##################################################
+################################################################################
 # Colors
 #Regular text color
 BLACK='\[\e[0;30m\]'
@@ -286,104 +254,9 @@ if [ -n "$branch" ]; then
 fi
 }
 
-# Custom functions
-##################
 
-
-
-alias dateFS='date +"%Y-%m-%d_%H-%M-%S"'
-
-hexseq () {
-  seq $@ | while read i; do
-    echo "obase=16; ibase=10; $i" | bc | tr '[:upper:]' '[:lower:]'; 
-  done
-}
-
-# Dump the TLP header log for a function along with related AER fields #79254
-tlpdump () {
-  if [ -z $1 ]; then 
-    echo "need BDF as first arg"
-    return 1
-  fi;
-  BDF=$1;
-  lspci -s $BDF -vv 2>/dev/null | grep -E "(DevSta|UE|CE|AERCap)" | sed 's/^[[:space:]]*//g' | grep -E --color=always "($|[^ ][a-zA-Z]*\+)"
-  echo "BDF       offset   data";
-  echo "===       ======   ====";
-  # tlp header dump is only 16 bytes, and we want to read this in dwords.. = 4 dwords
-  hexseq 28 4 43 | while read off; do echo $BDF - ECAP_AER+$off : $(setpci -s $BDF ECAP_AER+0x$off.l); done;
-
-}
-
-# C include tree graphs.
-# the hard bit is including all the necessary files
-itree () { #indirected graph with c and h files as separate nodes
-  rm /tmp/includetree.png 2>/dev/null
-  if [ -z $1 ]; then 
-    DPI=150
-  else
-    DPI=$1
-  fi;
-  # get correct include paths (just get everything up to previous .hg or .git)
-  path=""
-  find_repo=$(find_repo)
-  if ! [ -z $find_repo ]; then
-    include_base=$find_repo;
-    inbetween=$(pwd -P | sed "s|$include_base||g")
-    IFS="/" read -ra PARTS <<< "$inbetween"
-    for i in "${PARTS[@]}"
-    do
-      path=$path,"$include_base/$i"
-    done
-    # also add the same thing but with "include" stuck on the end, stuff often hides in include leaves
-    for i in "${PARTS[@]}"
-    do
-      path=$path,"$include_base/$i/include"
-    done
-  fi
-  if ! [ -z $path ]; then path="--include $path"; fi
-  # create graph
-  #echo "/home/$USER/scripts/cinclude2dot $path 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng -o /tmp/includetree.png 2>/dev/null"
-  /home/$USER/scripts/cinclude2dot $path 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng -o /tmp/includetree.png 2>/dev/null 
-  # view graph
-  feh --scale-down --auto-zoom /tmp/includetree.png 
-}
-itree2 () { #indirected graph with c and h files merged to one node
-  if [ -z $1 ]; then 
-    DPI=100
-  else
-    DPI=$1
-  fi;
-  /home/$USER/scripts/cinclude2dot --merge module 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng 2>/dev/null -o /tmp/includetree.png
-  feh --scale-down --auto-zoom /tmp/includetree.png 
-}
-itree3 () { #directed graph
-  if [ -z $1 ]; then 
-    DPI=150
-  else
-    DPI=$1
-  fi;
-  /home/$USER/scripts/cinclude2dot 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | dot -Gdpi=$DPI -Tpng 2>/dev/null -o /tmp/includetree.png
-  feh --scale-down --auto-zoom /tmp/includetree.png 
-}
-
-# completion with unsupported request bit set...
-tlp () {
-  if [ -z $1 ]; then 
-    echo "feed me a hex DWORD such as 0x1a810019"
-    return 1
-  fi;
-  DW=$1
-  echo "$DW:"
-  python -c "print '  Type   : ' + str( bin( ($DW >> 24) & 0x1f ) )" # Type
-  python -c "print '  Fmt    : ' + str( bin( ($DW >> 29) ) )" # Fmt
-  python -c "print '  CmpSta : ' + str( bin( ($DW >> 13) & 0x1f) )" # Completion Status
-}
-
-#find type and format of all tlp headers
-#tlpdump "01:00.0" | grep 100 | cut -d " " -f5 | while read DW; do tlp "0x$DW"; done;
-
-#https://sakshamsharma.com/2019/03/i3-wsl/
-#export DISPLAY=localhost:0
+# Convenience functions
+################################################################################
 
 # stuff commandline into clipboard
 function xcp(){
@@ -439,5 +312,101 @@ function githelp(){
 function gitbranch(){
   for k in `git branch | perl -pe s/^..//`; do echo -e `git show --pretty=format:"%Cgreen%ci %Cblue%cr%Creset" $k -- | head -n 1`\\t$k; done | sort -r
 }
-# /.bashrc
 
+scr () {
+  host_name=$1
+  screen_name=$2
+  if ! [ -z $DESKTOP_SESSION ] || ! [ -z $_SSH_FROM_GUI ]; then
+    ssh $host_name -t "_SSH_FROM_GUI=1 SCREEN_NAME=$screen_name screen -DR" $screen_name
+  else
+    ssh $host_name -t "SCREEN_NAME=$screen_name screen -DR" $screen_name
+  fi
+}
+
+hexseq () {
+  seq $@ | while read i; do
+    echo "obase=16; ibase=10; $i" | bc | tr '[:upper:]' '[:lower:]';
+  done
+}
+
+# Dump the TLP header log for a function along with related AER fields #79254
+tlpdump () {
+  if [ -z $1 ]; then
+    echo "need BDF as first arg"
+    return 1
+  fi;
+  BDF=$1;
+  lspci -s $BDF -vv 2>/dev/null | grep -E "(DevSta|UE|CE|AERCap)" | sed 's/^[[:space:]]*//g' | grep -E --color=always "($|[^ ][a-zA-Z]*\+)"
+  echo "BDF       offset   data";
+  echo "===       ======   ====";
+  # tlp header dump is only 16 bytes, and we want to read this in dwords.. = 4 dwords
+  hexseq 28 4 43 | while read off; do echo $BDF - ECAP_AER+$off : $(setpci -s $BDF ECAP_AER+0x$off.l); done;
+
+}
+
+# completion with unsupported request bit set...
+tlp () {
+  if [ -z $1 ]; then
+    echo "feed me a hex DWORD such as 0x1a810019"
+    return 1
+  fi;
+  DW=$1
+  echo "$DW:"
+  python -c "print '  Type   : ' + str( bin( ($DW >> 24) & 0x1f ) )" # Type
+  python -c "print '  Fmt    : ' + str( bin( ($DW >> 29) ) )" # Fmt
+  python -c "print '  CmpSta : ' + str( bin( ($DW >> 13) & 0x1f) )" # Completion Status
+}
+
+# C include tree graphs.
+# the hard bit is including all the necessary files
+itree () { #indirected graph with c and h files as separate nodes
+  rm /tmp/includetree.png 2>/dev/null
+  if [ -z $1 ]; then
+    DPI=150
+  else
+    DPI=$1
+  fi;
+  # get correct include paths (just get everything up to previous .hg or .git)
+  path=""
+  find_repo=$(find_repo)
+  if ! [ -z $find_repo ]; then
+    include_base=$find_repo;
+    inbetween=$(pwd -P | sed "s|$include_base||g")
+    IFS="/" read -ra PARTS <<< "$inbetween"
+    for i in "${PARTS[@]}"
+    do
+      path=$path,"$include_base/$i"
+    done
+    # also add the same thing but with "include" stuck on the end, stuff often hides in include leaves
+    for i in "${PARTS[@]}"
+    do
+      path=$path,"$include_base/$i/include"
+    done
+  fi
+  if ! [ -z $path ]; then path="--include $path"; fi
+  # create graph
+  #echo "/home/$USER/scripts/cinclude2dot $path 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng -o /tmp/includetree.png 2>/dev/null"
+  /home/$USER/scripts/cinclude2dot $path 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng -o /tmp/includetree.png 2>/dev/null
+  # view graph
+  feh --scale-down --auto-zoom /tmp/includetree.png
+}
+itree2 () { #indirected graph with c and h files merged to one node
+  if [ -z $1 ]; then
+    DPI=100
+  else
+    DPI=$1
+  fi;
+  /home/$USER/scripts/cinclude2dot --merge module 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng 2>/dev/null -o /tmp/includetree.png
+  feh --scale-down --auto-zoom /tmp/includetree.png
+}
+itree3 () { #directed graph
+  if [ -z $1 ]; then
+    DPI=150
+  else
+    DPI=$1
+  fi;
+  /home/$USER/scripts/cinclude2dot 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | dot -Gdpi=$DPI -Tpng 2>/dev/null -o /tmp/includetree.png
+  feh --scale-down --auto-zoom /tmp/includetree.png
+}
+
+# /.bashrc
