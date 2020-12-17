@@ -302,20 +302,16 @@ Position the cursor at it's beginning, according to the current mode."
   (indent-according-to-mode))
 
 (global-set-key (kbd "M-o") 'smart-open-line)
-(global-set-key (kbd "C-O") 'smart-open-line-above)
-; terminal emacs doesn't like M-O for some reason >:(
-;(global-set-key (kbd "M-O") 'smart-open-line-above)
+(global-set-key (kbd "M-O") 'smart-open-line-above)
 
-;; kill line (dd) shift-backspace instead of awkward c-s-bspace
+;; kill line (dd) ctrl instead of awkward c-s-bspace
 (global-set-key (kbd "<S-backspace>") 'kill-whole-line)
 ;; copy line (yy) ctrl-backspace
 (defun copy-whole-line ()
   (interactive)
-  (move-end-of-line nil)
-  (set-mark-command nil)
-  (move-beginning-of-line nil)
-  (kill-ring-save (region-beginning) (region-end))
-  (kill-append "\n" nil))
+  (kill-whole-line)
+  (yank)
+  (forward-line -1))
 (global-set-key (kbd "<C-backspace>") 'copy-whole-line)
 
 ;; duplicate line
@@ -391,7 +387,7 @@ Position the cursor at it's beginning, according to the current mode."
 (global-set-key (kbd "C-x |") 'toggle-window-split)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Coding style
+; Code style
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;(setq tab-width 2) ; how many spaces a tab is
@@ -570,6 +566,10 @@ Position the cursor at it's beginning, according to the current mode."
 (global-set-key (kbd "C-.") 'other-window)
 (global-set-key (kbd "<M-left>") 'prev-window)
 (global-set-key (kbd "<M-right>") 'other-window)
+
+;; highlight whitespace at the end of lines red
+(setq-default show-trailing-whitespace t)
+
 (defun prev-window ()
   (interactive)
   (other-window -1))

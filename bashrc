@@ -14,12 +14,18 @@ fi
 
 # Colouring command line things
 ##################################################
-#alias rrep='grep --color=auto --exclude-dir=".git;.svn;.hg;" --exclude-from="TAGS"'
-#alias grepc='grep --color=always --exclude-dir=".git;.svn;.hg;" --exclude-from="TAGS"'
 alias sudo='sudo ' # makes sudo xyz also alias
 alias gr='grep -r --color=always --exclude="TAGS" --exclude="tags" --exclude-dir="build"'
 alias grep='grep --color=auto --exclude="TAGS" --exclude="tags"'
 alias grepc='grep --color=always --exclude="TAGS" --exclude="tags"'
+# grep aliases - exclude files (+ directories if supported)
+if ! echo blah | grep blah --exclude-dir=blah 1>/dev/null 2>/dev/null; then # old grep, e.g GNU grep 2.5.1
+  alias grep_exclude='grep --exclude={TAGS,tags,*#*#} '
+else
+  alias grep_exclude='grep --exclude={TAGS,tags,*#*#} --exclude-dir={build,.hg,.git,doc} '
+fi
+alias gr='grep_exclude --color=always -r' #some servers don't like recursive aliasing
+alias grepc='grep_exclude --color=always'
 alias egrep='egrep --color=auto'
 alias egrepc='egrep --color=always'
 alias less='less -R'              # print ANSI colours when piped from grepc
@@ -35,27 +41,84 @@ export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quo
 alias g++="g++ -fdiagnostics-color=always
 alias gcc="g++ -fdiagnostics-color=always
 
-alias vi='vim'
 #alias vim='if $(hash gvim 2>/dev/null); then gvim; else vim; fi;'
-alias which='alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde'
+#alias which='alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde'
 #alias ssh='ssh -X'
-alias ssh="/home/$USER/bin/sshwait" 
+#alias ssh="/home/$USER/bin/sshwait"
+alias suc="su -c '/bin/bash --rcfile ~$USER/.bashrc -i'" 
 alias vimt='vim -c "NERDTree" $1'
 if $(hash colordiff 2>/dev/null); then alias cdiff='colordiff'; fi
-
-# GIT
-######
-alias gitlog="git log --all --graph --decorate"
-alias gitqrefresh="git commit -a --fixup HEAD; git rebase -i --autosquash HEAD~2"
-alias suc="su -c '/bin/bash --rcfile ~$USER/.bashrc -i'" 
-alias dd="dd status=progress"
+alias hglog='hg log --style compact -G'
+alias gshow="git show"
+alias gdif="git diff"
+alias gstag="git diff --staged"
+alias gpull="git pull --rebase"
+alias gcom="git commit"
+alias gammend="git commit --amend"
+alias greb="git rebase"
+alias grebi="git rebase -i"
+alias gitlog="git log --graph --all --decorate --color"
+alias glog="git log --graph --all --decorate --color"
+alias glogp="git log --graph --all --decorate --color -p"
+alias glogme="git log --graph --all --decorate --color --author $USER"
+alias gitlong='git log --stat'
+alias gitqrefresh='git commit -a --fixup HEAD; git rebase -i --autosquash HEAD~2'
+alias sume="su -c '/bin/bash --rcfile /home/$USER/.bashrc -i'"
+alias dd='function __myalias() { if dd if=/dev/zero of=/dev/zero bs=1MB count=1 status=progress >/dev/null 2>&1; then dd status=progress $@; else dd $@; fi; unset -f __myalias; }; __myalias'
 alias dateF="date +\"%Y-%m-%d_%H-%M\""
 alias rebashrc="unalias -a; source /home/$USER/.bashrc"
+alias lynx='lynx -accept_all_cookies -vikeys -number_links'
+alias hgcommitlist='hg log --template "{author|person}\n" | sort | uniq -c | sort -nr'
 alias wifi-tui="nmtui"
 alias wifi-gui="nm-connection-editor"
 alias wifi-applet="nm-applet"
 alias psef="ps -ef | head -n1; ps -ef | tail -n+2"
 alias gby="gatsby"
+
+alias vi='vim'
+#alias vim='if $(hash gvim 2>/dev/null); then gvim; else vim; fi;'
+#alias which='alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde'
+#alias ssh='ssh -X'
+#alias ssh="/home/$USER/bin/sshwait" 
+alias vimt='vim -c "NERDTree" $1'
+alias cdif='diff --color=always'
+if $(hash colordiff 2>/dev/null); then alias cdiff='colordiff'; fi
+alias hglog='hg log --style compact -G'
+alias gshow="git show"
+alias gdif="git diff"
+alias gstag="git diff --staged"
+alias gpull="git pull --rebase"
+alias gcom="git commit"
+alias gammend="git commit --amend"
+alias greb="git rebase"
+alias grebi="git rebase -i"
+alias gitlog="git log --graph --all --decorate --color"
+alias glog="git log --graph --all --decorate --color"
+alias glogp="git log --graph --all --decorate --color -p"
+alias glogme="git log --graph --all --decorate --color --author $USER"
+alias gitlong='git log --stat'
+alias gitqrefresh='git commit -a --fixup HEAD; git rebase -i --autosquash HEAD~2'
+alias sume="su -c '/bin/bash --rcfile /home/$USER/.bashrc -i'"
+alias dd='function __myalias() { if dd if=/dev/zero of=/dev/zero bs=1MB count=1 status=progress >/dev/null 2>&1; then dd status=progress $@; else dd $@; fi; unset -f __myalias; }; __myalias'
+alias dateF="date +\"%Y-%m-%d_%H-%M\""
+alias rebash="unalias -a; source /home/$USER/.bashrc"
+alias rebashrc="unalias -a; source /home/$USER/.bashrc"
+alias tailend='ls -rt -1 | tail -n1'
+alias lynx='lynx -accept_all_cookies -vikeys -number_links'
+alias glynx='lynx -accept_all_cookies google.com -vikeys -number_links'
+alias hgcommitlist='hg log --template "{author|person}\n" | sort | uniq -c | sort -nr'
+alias src='cd /home/$USER/src; if [ $(ll | wc -l) -gt 20 ]; then ll | head -n20; echo "..."; else ll; fi'
+
+scr () {
+  host_name=$1
+  screen_name=$2
+  if ! [ -z $DESKTOP_SESSION ] || ! [ -z $_SSH_FROM_GUI ]; then
+    ssh $host_name -t "_SSH_FROM_GUI=1 SCREEN_NAME=$screen_name screen -DR" $screen_name
+  else
+    ssh $host_name -t "SCREEN_NAME=$screen_name screen -DR" $screen_name
+  fi
+}
+
 # Do once things
 ##################################################
 shopt -s checkwinsize # stops the prompt occasionally eating itself
@@ -66,7 +129,7 @@ HISTCONTROL=ignoredups # dont store line if same as prev (session) line
 
 export PATH=$PATH:/home/$USER/.local/bin
 
-# Do environment specific stuff if file exits
+# Do user specific stuff if file exits
 ##################################################
 if [ -f /home/$USER/.bash_x ]; then
   source /home/$USER/.bash_x
@@ -126,9 +189,15 @@ function prompt_command
   history -a # append previous line to disk
   PS1=$PS1${DF}" "
 
-  # my ssh script sets $_SSH_FROM_GUI by using a rcfile wrapper, so this is implemented in three places...
+  # my ssh script sets _SSH_FROM_GUI when sshing from a desktop or from somewhere that already has this flag set
   if ! [ -z $DESKTOP_SESSION ] || ! [ -z $_SSH_FROM_GUI ]; then
-    echo -ne "\033]0;$(hostname)\007" # terminal title = hostname
+    if ! [ -z $STY ]; then
+      echo -ne "\033]0;screen: "$(echo $STY | cut -d "." -f2)" ~ host: $(hostname)\007" # terminal title = screenname
+    elif ! [ -z $SCREEN_NAME ]; then
+      echo -ne "\033]0;screen: $SCREEN_NAME ~ host: $(hostname)\007" # terminal title = screenname
+    else
+      echo -ne "\033]0;$(hostname)\007" # terminal title = hostname
+    fi
   fi
 
 }
@@ -181,15 +250,8 @@ function hg_prompt
 local hg_exist=$(/home/$USER/.local/bin/find_hg 2>/dev/null) # 2>... as uklogin shouts about about stale NFS handles
 if [ -n "$hg_exist" ]; then
 local hg_root=$hg_exist"/.hg/"
+local hg_repo=$(echo $hg_exist | sed 's|.*/||g')
 local DF='\[\e[0m\]'
-#local branch=$(hg branch 2> /dev/null)
-#local bookmark=$(hg bookmarks 2> /dev/null | grep "^ \*" | sed 's/^ \* //g' | sed 's/ *[0-9]*:[0-9a-z]*$//g')
-#bewlow works but annoyingly slow!
-#local branchbookmarkpatch=$(hg prompt "1{branch} 2{bookmark} 3{patch}" 2> /dev/null)
-#local arr=($branchbookmarkpatch)
-#local branch=${arr[0]}; branch=${branch#?}
-#local bookmark=${arr[1]}; bookmark=${bookmark#?}
-#local patch=${arr[2]}; patch=${patch#?}
 local branch=$(cat $hg_root/branch 2>/dev/null)
 local bookmark=$(cat $hg_root/bookmarks.current 2>/dev/null)
 local patch=$(cat $hg_root/patches/status 2>/dev/null | tail -n 1 | sed "s/.*://g")
@@ -227,38 +289,155 @@ fi
 # Custom functions
 ##################
 
-# toggle key bindings between laptop keyboard and real keyboard         
-# only difference at the moment is that alt-gr is mapped                
-# to ctrl on laptop, but alt on desktop                                 
-togglekb(){                                                             
-  if [ -z $KB ] || [[ $KB == "laptop" ]]; then                          
-    # change to desktop                                                 
-    export KB="desktop"                                                 
-  else                                                                  
-    export KB="laptop"                                                  
-  fi                                                                    
-  if [ $KB == "desktop" ]; then                                         
-    echo "desktop keyboard"
-    # assign altgr to ctrl
-    xmodmap -e "remove Control = Control_R"
-    xmodmap -e "keycode 108 = Control_R"
-    xmodmap -e "add Control = Control_R"
-    # map context menu key to windows/super key
-    xmodmap -e "keycode 135 = Super_L NoSymbol Super_L"
 
-  else
-    echo "laptop keyboard"
-    # assign altgr to super? >:(
-    #xmodmap -e "keycode 108 = Alt_L NoSymbol Super_L"
-    xmodmap -e "keycode 108 = Alt_L NoSymbol Alt_L"
-  fi
+
+alias dateFS='date +"%Y-%m-%d_%H-%M-%S"'
+
+hexseq () {
+  seq $@ | while read i; do
+    echo "obase=16; ibase=10; $i" | bc | tr '[:upper:]' '[:lower:]'; 
+  done
 }
 
-# remove ugly gnome term window?
-#if [ "$TERM" = "xterm-256color" ]; then
-#  xprop -id $(xdotool getactivewindow) -f _MOTIF_WM_HINTS 32c -set _MOTIF_WM_HINTS "0x2, 0x0, 0x0, 0x0, 0x0"
-#fi
+# Dump the TLP header log for a function along with related AER fields #79254
+tlpdump () {
+  if [ -z $1 ]; then 
+    echo "need BDF as first arg"
+    return 1
+  fi;
+  BDF=$1;
+  lspci -s $BDF -vv 2>/dev/null | grep -E "(DevSta|UE|CE|AERCap)" | sed 's/^[[:space:]]*//g' | grep -E --color=always "($|[^ ][a-zA-Z]*\+)"
+  echo "BDF       offset   data";
+  echo "===       ======   ====";
+  # tlp header dump is only 16 bytes, and we want to read this in dwords.. = 4 dwords
+  hexseq 28 4 43 | while read off; do echo $BDF - ECAP_AER+$off : $(setpci -s $BDF ECAP_AER+0x$off.l); done;
 
+}
 
+# C include tree graphs.
+# the hard bit is including all the necessary files
+itree () { #indirected graph with c and h files as separate nodes
+  rm /tmp/includetree.png 2>/dev/null
+  if [ -z $1 ]; then 
+    DPI=150
+  else
+    DPI=$1
+  fi;
+  # get correct include paths (just get everything up to previous .hg or .git)
+  path=""
+  find_repo=$(find_repo)
+  if ! [ -z $find_repo ]; then
+    include_base=$find_repo;
+    inbetween=$(pwd -P | sed "s|$include_base||g")
+    IFS="/" read -ra PARTS <<< "$inbetween"
+    for i in "${PARTS[@]}"
+    do
+      path=$path,"$include_base/$i"
+    done
+    # also add the same thing but with "include" stuck on the end, stuff often hides in include leaves
+    for i in "${PARTS[@]}"
+    do
+      path=$path,"$include_base/$i/include"
+    done
+  fi
+  if ! [ -z $path ]; then path="--include $path"; fi
+  # create graph
+  #echo "/home/$USER/scripts/cinclude2dot $path 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng -o /tmp/includetree.png 2>/dev/null"
+  /home/$USER/scripts/cinclude2dot $path 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng -o /tmp/includetree.png 2>/dev/null 
+  # view graph
+  feh --scale-down --auto-zoom /tmp/includetree.png 
+}
+itree2 () { #indirected graph with c and h files merged to one node
+  if [ -z $1 ]; then 
+    DPI=100
+  else
+    DPI=$1
+  fi;
+  /home/$USER/scripts/cinclude2dot --merge module 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng 2>/dev/null -o /tmp/includetree.png
+  feh --scale-down --auto-zoom /tmp/includetree.png 
+}
+itree3 () { #directed graph
+  if [ -z $1 ]; then 
+    DPI=150
+  else
+    DPI=$1
+  fi;
+  /home/$USER/scripts/cinclude2dot 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | dot -Gdpi=$DPI -Tpng 2>/dev/null -o /tmp/includetree.png
+  feh --scale-down --auto-zoom /tmp/includetree.png 
+}
+
+# completion with unsupported request bit set...
+tlp () {
+  if [ -z $1 ]; then 
+    echo "feed me a hex DWORD such as 0x1a810019"
+    return 1
+  fi;
+  DW=$1
+  echo "$DW:"
+  python -c "print '  Type   : ' + str( bin( ($DW >> 24) & 0x1f ) )" # Type
+  python -c "print '  Fmt    : ' + str( bin( ($DW >> 29) ) )" # Fmt
+  python -c "print '  CmpSta : ' + str( bin( ($DW >> 13) & 0x1f) )" # Completion Status
+}
+
+#find type and format of all tlp headers
+#tlpdump "01:00.0" | grep 100 | cut -d " " -f5 | while read DW; do tlp "0x$DW"; done;
+
+#https://sakshamsharma.com/2019/03/i3-wsl/
+#export DISPLAY=localhost:0
+
+# stuff commandline into clipboard
+function xcp(){
+  echo "$@" | xclip -selection clipboard
+}
+
+function githelp(){
+ local helpz="
+ update all submodules:
+   git submodule update --init --recursive
+
+ create new branch:
+   git checkout -b <NEW_BRANCH>
+
+ move branch to commit:
+   git branch -f <BRANCH> <COMMIT>
+
+ remove all changes in working direcotry
+   git checkout .
+
+ move changes from staging to working directory:
+   git reset
+
+ update the most recent commit with local changes:
+   git add -u
+   git commit --amend
+
+ interactively split a patch:
+   tig
+
+ modify your commit queue:
+   git rebase -i HEAD~10 # or some suitable number of past commits you want to trawl through
+   # foreach
+     vim files-to-change
+     git add -u && git commit --amend
+     git rebase --continue
+
+ rebase your local branch [JIRA-401] against some upstream branch [dev]:
+   git checkout dev && git pull # update your main branch
+   git rebase dev JIRA-401     # rebase your local branch onto your main branch
+
+ origin/master has diverged, and you want to rebase local master onto it
+   git rebase origin/master master
+
+ post a review
+   rbt post <CHANGESET>
+ update a review
+   rbt post -u [-r <RB_NUM>]
+ "
+ echo "$helpz"|less
+}
+
+function gitbranch(){
+  for k in `git branch | perl -pe s/^..//`; do echo -e `git show --pretty=format:"%Cgreen%ci %Cblue%cr%Creset" $k -- | head -n 1`\\t$k; done | sort -r
+}
 # /.bashrc
 
