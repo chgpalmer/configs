@@ -2,6 +2,10 @@
 ;;; Commentary:
 ; need the above for some reason
 
+;; For environment specific specific config
+;; (E.g laptop, desktop, work, etc.)
+(defvar config_env (getenv "_CONFIG_ENV_TYPE"))
+
 ;; eval/refresh/reload init.el. this loads the saved file, evaluates, and closes the file.
 ;; doesn't mess with init.el even if you already have it modified in a buffer
 (global-set-key (kbd "M-g M-y") '(lambda () (interactive) (load-file user-init-file)))
@@ -57,9 +61,21 @@
        '((foreground-color . "wheat")
  (background-color . "black")
  )))
-;; font
-(set-face-attribute 'default nil :height 105) ;; increments of 5? lame... 105,6,7,8 are the same
 
+;; font
+(if config_env
+  (when (string-match "laptop" config_env)
+   ;;HiDPi laptop with DjaVu Sans Mono installed... have pretty fonts
+    (set-face-attribute 'default nil :height 105) ;; increments of 5? lame... 105,6,7,8 are the same
+    (custom-set-faces
+     ;; custom-set-faces was added by Custom.
+     ;; If you edit it by hand, you could mess it up, so be careful.
+     ;; Your init file should contain only one such instance.
+     ;; If there is more than one, they won't work right.
+     '(default ((t (:inherit nil :stipple nil :background "black" :foreground "wheat" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 113 :width normal :foundry "PfEd" :family "DejaVu Sans Mono"))))
+     '(cursor ((t (:background "#ffffff")))))
+  )
+)
 ;; hide toolbar
 ;(menu-bar-showhide-tool-bar-menu-customize-disable)
 (tool-bar-mode 0)
@@ -582,14 +598,6 @@ Position the cursor at it's beginning, according to the current mode."
 
 ;; show matching parenthesis
 (show-paren-mode 1)
-
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :stipple nil :background "black" :foreground "wheat" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 113 :width normal :foundry "PfEd" :family "DejaVu Sans Mono"))))
- '(cursor ((t (:background "#ffffff")))))
 
 ;; grey out #if 0 -> #endif
 ;; http://stackoverflow.com/questions/4549015/in-c-c-mode-in-emacs-change-face-of-code-in-if-0-endif-block-to-comment-f?noredirect=1&lq=1
