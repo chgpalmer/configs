@@ -1,4 +1,4 @@
-if [ $_CONFIG_ENV_TYPE == laptop ]
+if [ $_CONFIG_ENV_TYPE == laptop ]; then
   # QHD+ 13" laptop settings
   # initialise X resource database
   xrdb -load ~/.Xresources
@@ -48,3 +48,4 @@ fi
 # then in i3 config you bind to `focus-last.py --switch` to go back :)
 if ! ps -ef | grep -E "[0-9] python3 .*focus-last.py"; then
   ~/.config/i3/focus-last.py &
+fi
