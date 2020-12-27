@@ -176,7 +176,7 @@ bindsym $win+Ctrl+1 append_layout ~/i3/i3layout_main.json
 bindsym $win+Ctrl+2 append_layout ~/i3/i3layout_dev.json
 
 # Firefox PIP goes into a tab :)
-for_window [window_role="PictureInPicture"] floating disable, move container to workspace 1
+for_window [window_role="PictureInPicture"] floating disable, move container to workspace number 1
 
 # Rerun .xinitrc to fix keyboard swapping...
 bindsym $win+k exec "/home/$USER/.xinitrc; notify-send -t 1500 I3: 'reloaded .xinitrc'"
