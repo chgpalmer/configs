@@ -202,6 +202,7 @@ exec --no-startup-id feh --bg-scale /home/$USER/Pictures/Dark-pattern.jpg
 #exec --no-startup-id xsetroot -solid "#333333"
 exec xfce4-power-manager #avoid the battery dying
 exec nm-applet #easy wifi! yay
+exec ~/.xinitrc
 
 # multi monitors!
 # On startup, set the screen for dual monitors
