@@ -114,7 +114,7 @@ bindsym $win+Home focus parent
 # would paint onto the new workspace windows. weird bug..
 # also turn off caps lock!
 bindsym $win+x exec xrefresh; exec source /home/$USER/.xinitrc; exec "python -c 'from ctypes import *; X11 = cdll.LoadLibrary(\\"libX11.so.6\\"); display = X11.XOpenDisplay(None); X11.XkbLockModifiers(display, c_uint(0x0100), c_uint(2), c_uint(0)); X11.XCloseDisplay(display)'"
-bindsym $win+1 workspace number 1; exec xrefresh
+bindsym $win+1 exec python3 /home/$USER/.config/i3/focus-last.py --window 1
 bindsym $win+2 workspace number 2; exec xrefresh
 bindsym $win+3 workspace number 3; exec xrefresh
 bindsym $win+4 workspace number 4; exec xrefresh
