@@ -47,8 +47,8 @@ fi
 # i3 extension that runs in the background and remembers your prev workspace
 # then in i3 config you bind to `focus-last.py --switch` to go back :)
 if ! ps -ef | grep -E "[0-9] python3 .*focus-last.py"; then
-  ~/src/i3/focus-last.py &
+  ~/src/i3-scripts/focus-last.py &
 fi
 if ! ps -ef | grep -E "[0-9] python3 .*fakefullscreen.py"; then
-  ~/src/i3/fakefullscreen.py &
+  ~/src/i3-scripts/fakefullscreen.py &
 fi
