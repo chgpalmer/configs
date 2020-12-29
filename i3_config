@@ -129,7 +129,7 @@ bindsym $win+0 workspace number 0; exec xrefresh
 
 # go to last focused window. useful if you're switching between 2 windows on different workspaces
 # requires focus-last.py to be running in the background (.xinitrc)
-bindsym $win+grave exec python3 /home/$USER/src/i3-scripts/focus-last.py --switch; exec xrefresh
+bindsym $win+grave exec python3 /home/$USER/src/i3-scripts/focus-last.py --switch
 
 # deselect groups of windows, emacsy binding
 bindsym $win+g workspace next; workspace prev

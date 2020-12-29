@@ -75,6 +75,8 @@ alias hglog='hg log --style compact -G'
 alias hgcommitlist='hg log --template "{author|person}\n" | sort | uniq -c | sort -nr'
 
 # Git
+alias gstash="git stash"
+alias gstatus="git status"
 alias gshow="git show"
 alias gdif="git diff"
 alias gstag="git diff --staged"
