@@ -71,12 +71,6 @@ bindsym $win+Next focus right
 bindsym $win+Prior focus left
 
 # move focused window
-bindsym $win+Shift+j move left
-bindsym $win+Shift+k move down
-bindsym $win+Shift+l move up
-bindsym $win+Shift+semicolon move right
-
-# alternatively, you can use the cursor keys:
 bindsym $win+Shift+Left move left
 bindsym $win+Shift+Down move down
 bindsym $win+Shift+Up move up
@@ -122,16 +116,14 @@ bindsym $win+7 workspace number 7
 bindsym $win+8 workspace number 8
 bindsym $win+9 workspace number 9
 bindsym $win+0 workspace number 0
-#bindsym $win+Tab workspace next
-#bindsym $win+Shift+Tab workspace prev
 
 # go to last focused window. useful if you're switching between 2 windows on different workspaces
 # requires focus-last.py to be running in the background (.xinitrc)
 bindsym $win+grave exec python3 /home/$USER/src/i3-scripts/focus-last.py --switch
 
 # deselect groups of windows, emacsy binding
-bindsym $win+g workspace next; workspace prev
-bindsym $win+End workspace next; workspace prev
+bindsym $win+g focus child; focus left; focus right; focus up; focus down
+bindsym $win+End focus child; focus left; focus right; focus up; focus down
 
 # move focused container to workspace
 bindsym $win+Shift+1 move container to workspace number 1
