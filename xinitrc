@@ -26,6 +26,10 @@ if [ $_CONFIG_ENV_TYPE == laptop ]; then
   fi
 
 else
+  # fix i3wm artifacts when changing workspace with Citrix VDI
+  if ! ps -ef | grep -E "[0-9] python3 .*ws-xrefresh.py"; then
+    ~/src/i3-scripts/ws-xrefresh.py &
+  fi
   # xbindkeys -k to see what a key/key combo is
   # xev lets you see key codes
 
