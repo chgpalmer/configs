@@ -286,8 +286,15 @@ function githelp(){
    git add -u
    git commit --amend
 
- interactively split a patch:
+ split most recent commit into 2:
+   git reset HEAD^
    tig
+   # add bits (u for hunks, 1 for lines) you want in patch 1,
+   # fixup lines by editing (e)
+   glog
+   git commit -m "p1"
+   git add -u
+   git commit -m "p2"
 
  modify your commit queue:
    git rebase -i HEAD~10 # or some suitable number of past commits you want to trawl through
@@ -295,6 +302,8 @@ function githelp(){
      vim files-to-change
      git add -u && git commit --amend
      git rebase --continue
+   # if you hit a merge conflict, DO NOT use git commit --ammend or it'll squash the conflicted commit
+   # instead, just make fixes and then run git rebase --continue
 
  rebase your local branch [JIRA-401] against some upstream branch [dev]:
    git checkout dev && git pull # update your main branch
@@ -306,7 +315,7 @@ function githelp(){
  post a review
    rbt post <CHANGESET>
  update a review
-   rbt post -u [-r <RB_NUM>]
+   rbt post -u [-r <RB_NUM>] <CHANGESET>
  "
  echo "$helpz"|less
 }
