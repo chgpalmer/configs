@@ -73,7 +73,7 @@ alias vi='vim'
 #alias vim='if $(hash gvim 2>/dev/null); then gvim; else vim; fi;'
 #alias which='alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde'
 #alias ssh='ssh -X'
-#alias ssh="/home/$USER/bin/sshwait" 
+#alias ssh="$HOME/bin/sshwait" 
 alias vimt='vim -c "NERDTree" $1'
 alias cdif='diff --color=always'
 if $(hash colordiff 2>/dev/null); then alias cdiff='colordiff'; fi
@@ -92,16 +92,16 @@ alias glogp="git log --graph --all --decorate --color -p"
 alias glogme="git log --graph --all --decorate --color --author $USER"
 alias gitlong='git log --stat'
 alias gitqrefresh='git commit -a --fixup HEAD; git rebase -i --autosquash HEAD~2'
-alias sume="su -c '/bin/bash --rcfile /home/$USER/.bashrc -i'"
+alias sume="su -c '/bin/bash --rcfile $HOME/.bashrc -i'"
 alias dd='function __myalias() { if dd if=/dev/zero of=/dev/zero bs=1MB count=1 status=progress >/dev/null 2>&1; then dd status=progress $@; else dd $@; fi; unset -f __myalias; }; __myalias'
 alias dateF="date +\"%Y-%m-%d_%H-%M\""
-alias rebash="unalias -a; source /home/$USER/.bashrc"
-alias rebashrc="unalias -a; source /home/$USER/.bashrc"
+alias rebash="unalias -a; source $HOME/.bashrc"
+alias rebashrc="unalias -a; source $HOME/.bashrc"
 alias tailend='ls -rt -1 | tail -n1'
 alias lynx='lynx -accept_all_cookies -vikeys -number_links'
 alias glynx='lynx -accept_all_cookies google.com -vikeys -number_links'
 alias hgcommitlist='hg log --template "{author|person}\n" | sort | uniq -c | sort -nr'
-alias src='cd /home/$USER/src; if [ $(ll | wc -l) -gt 20 ]; then ll | head -n20; echo "..."; else ll; fi'
+alias src='cd $HOME/src; if [ $(ll | wc -l) -gt 20 ]; then ll | head -n20; echo "..."; else ll; fi'
 
 scr () {
   host_name=$1
@@ -121,12 +121,12 @@ HISTSIZE=20000 # history lines available in session
 HISTFILESIZE=100000 # total history lines stored
 HISTCONTROL=ignoredups # dont store line if same as prev (session) line
 
-export PATH=$PATH:/home/$USER/.local/bin
+export PATH=$PATH:$HOME/.local/bin
 
 # Do machine specific stuff if file exits
 ##################################################
-if [ -f /home/$USER/.bash_x ]; then
-  source /home/$USER/.bash_x
+if [ -f $HOME/.bash_x ]; then
+  source $HOME/.bash_x
 fi
 
 # Terminal title
@@ -241,7 +241,7 @@ fi
 function hg_prompt
 {
 #hg_exist=$(ls -a | egrep "^\.hg$" 2> /dev/null)
-local hg_exist=$(/home/$USER/.local/bin/find_hg 2>/dev/null) # 2>... as uklogin shouts about about stale NFS handles
+local hg_exist=$($HOME/.local/bin/find_hg 2>/dev/null) # 2>... as uklogin shouts about about stale NFS handles
 if [ -n "$hg_exist" ]; then
 local hg_root=$hg_exist"/.hg/"
 local hg_repo=$(echo $hg_exist | sed 's|.*/||g')
@@ -331,8 +331,8 @@ itree () { #indirected graph with c and h files as separate nodes
   fi
   if ! [ -z $path ]; then path="--include $path"; fi
   # create graph
-  #echo "/home/$USER/scripts/cinclude2dot $path 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng -o /tmp/includetree.png 2>/dev/null"
-  /home/$USER/scripts/cinclude2dot $path 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng -o /tmp/includetree.png 2>/dev/null 
+  #echo "$HOME/scripts/cinclude2dot $path 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng -o /tmp/includetree.png 2>/dev/null"
+  $HOME/scripts/cinclude2dot $path 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng -o /tmp/includetree.png 2>/dev/null 
   # view graph
   feh --scale-down --auto-zoom /tmp/includetree.png 
 }
@@ -342,7 +342,7 @@ itree2 () { #indirected graph with c and h files merged to one node
   else
     DPI=$1
   fi;
-  /home/$USER/scripts/cinclude2dot --merge module 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng 2>/dev/null -o /tmp/includetree.png
+  $HOME/scripts/cinclude2dot --merge module 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng 2>/dev/null -o /tmp/includetree.png
   feh --scale-down --auto-zoom /tmp/includetree.png 
 }
 itree3 () { #directed graph
@@ -351,7 +351,7 @@ itree3 () { #directed graph
   else
     DPI=$1
   fi;
-  /home/$USER/scripts/cinclude2dot 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | dot -Gdpi=$DPI -Tpng 2>/dev/null -o /tmp/includetree.png
+  $HOME/scripts/cinclude2dot 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | dot -Gdpi=$DPI -Tpng 2>/dev/null -o /tmp/includetree.png
   feh --scale-down --auto-zoom /tmp/includetree.png 
 }
 
