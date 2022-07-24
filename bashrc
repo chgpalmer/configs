@@ -272,10 +272,11 @@ function git_prompt
 local DF='\[\e[0m\]'
 local branch=$(git branch 2>/dev/null | grep '^*' | colrm 1 2)
 if [ -n "$branch" ]; then
-  # remove newline 
-  if [[ $(expr substr $PS1 $((${#PS1}-1)) 2) == '\n' ]]; then
-    PS1=$(expr substr $PS1 1 $((${#PS1}-2)))
-  fi
+  # remove newline
+  # FIXME: expr: syntax error
+  #if [[ $(expr substr $PS1 $((${#PS1}-1)) 2) == '\n' ]]; then
+  #  PS1=$(expr substr $PS1 1 $((${#PS1}-2)))
+  #fi
   # append git bits to prompt
   PS1+="[${BROWN}$branch${DF}]\n"
 fi
