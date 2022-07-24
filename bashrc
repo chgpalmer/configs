@@ -93,6 +93,7 @@ alias glogme="git log --graph --all --decorate --color --author $USER"
 alias gitlong='git log --stat'
 alias gitqrefresh='git commit -a --fixup HEAD; git rebase -i --autosquash HEAD~2'
 alias gcherry='git cherry -v'
+alias gstatus='git status'
 alias sume="su -c '/bin/bash --rcfile $HOME/.bashrc -i'"
 alias dd='function __myalias() { if dd if=/dev/zero of=/dev/zero bs=1MB count=1 status=progress >/dev/null 2>&1; then dd status=progress $@; else dd $@; fi; unset -f __myalias; }; __myalias'
 alias dateF="date +\"%Y-%m-%d_%H-%M\""
@@ -272,11 +273,7 @@ function git_prompt
 local DF='\[\e[0m\]'
 local branch=$(git branch 2>/dev/null | grep '^*' | colrm 1 2)
 if [ -n "$branch" ]; then
-  # remove newline 
-  if [[ $(expr substr $PS1 $((${#PS1}-1)) 2) == '\n' ]]; then
-    PS1=$(expr substr $PS1 1 $((${#PS1}-2)))
-  fi
-  # append git bits to prompt
+  # append git bits to prompt followed by newline
   PS1+="[${BROWN}$branch${DF}]\n"
 fi
 }
