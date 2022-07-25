@@ -35,7 +35,7 @@ alias sume="su -c '/bin/bash --rcfile ~$USER/.bashrc -i'" # su with current user
 alias psef="ps -ef | head -n1; ps -ef | tail -n+2"
 
 # Grep
-alias gr='grep -r --color=always --exclude="TAGS" --exclude="tags" --exclude-dir="build"'
+alias gg='grep -r --color=always --exclude="TAGS" --exclude="tags" --exclude-dir="build"'
 alias grep='grep --color=auto --exclude="TAGS" --exclude="tags"'
 alias grepc='grep --color=always --exclude="TAGS" --exclude="tags"'
 # grep aliases - exclude files (+ directories if supported)
@@ -44,10 +44,19 @@ if ! echo blah | grep blah --exclude-dir=blah 1>/dev/null 2>/dev/null; then # ol
 else
   alias grep_exclude='grep --exclude={TAGS,tags,*#*#} --exclude-dir={build,.hg,.git,doc} '
 fi
-alias gr='grep_exclude --color=always -r' #some servers don't like recursive aliasing
+alias gg='grep_exclude --color=always -r' #some servers don't like recursive aliasing
 alias grepc='grep_exclude --color=always'
 alias egrep='egrep --color=auto'
 alias egrepc='egrep --color=always'
+in_git(){ git rev-parse --is-inside-work-tree >/dev/null 2>&1; }
+gr(){
+  # doesn't work if you're searching outside git from inside git
+  if in_git; then
+    git grep "$@"
+  else
+    grep -r "$@"
+  fi;
+}
 
 # Less
 alias less='less -R'              # print ANSI colours when piped from grepc
@@ -80,17 +89,35 @@ alias gstatus="git status"
 alias gshow="git show"
 alias gdif="git diff"
 alias gstag="git diff --staged"
+alias gfetch="git fetch"
 alias gpull="git pull --rebase"
 alias gcom="git commit"
 alias gammend="git commit --amend"
+alias gcherry="git cherry -v"
 alias greb="git rebase"
 alias grebi="git rebase -i"
 alias gitlog="git log --graph --all --decorate --color"
 alias glog="git log --graph --all --decorate --color"
 alias glogp="git log --graph --all --decorate --color -p"
 alias glogme="git log --graph --all --decorate --color --author $USER"
+gmonth(){ month=${1:-0}; git log --author="$(git config user.name)" --no-merges --since="$((month+1)) month ago" --until="$month month ago" --reverse --pretty="%cs %s" --abbrev-commit | grep -v "Update smartnic_fw version number"; }
+gyear(){ local from=${1:-0} to=${2:-11} num; for i in `seq $from $to`; do num=$(gmonth $i | wc -l); printf "%.2d : %0*d\n" $num $num; done }
 alias gitlong='git log --stat'
 alias gitqrefresh='git commit -a --fixup HEAD; git rebase -i --autosquash HEAD~2'
+function git-print-untagged-commits() {
+  branch=`git rev-parse --abbrev-ref HEAD`
+  if [ -z $1 ]; then
+    lasttag=`git describe --tags --abbrev=0 $branch`
+  else
+    lasttag=$1
+  fi
+  echo "
+   branch=$branch
+   lasttag=$lasttag
+   git log --pretty=oneline --abbrev-commit $lasttag..HEAD | cut -f 2- -d ' ' | sed 's|^|~ |g' |sort -u
+   "
+  git log --pretty=oneline --abbrev-commit $lasttag..HEAD | cut -f 2- -d ' ' | sed 's|^|~ |g' |sort -u
+}
 
 # dd progress bar
 alias dd='function __myalias() { if dd if=/dev/zero of=/dev/zero bs=1MB count=1 status=progress >/dev/null 2>&1; then dd status=progress $@; else dd $@; fi; unset -f __myalias; }; __myalias'
@@ -108,6 +135,17 @@ alias wifi-applet="nm-applet"
 alias gby="gatsby"
 alias lynx='lynx -accept_all_cookies -vikeys -number_links'
 alias glynx='lynx -accept_all_cookies google.com -vikeys -number_links'
+function xline() {
+  # Function rewrites the previous $# lines with $@
+  local multiline_fmt="" multiline=() w=`tput cols`;
+  for line in "$@"; do
+    line=`echo $line | tr -cd [:print:]`                  # remove non-printable chars (inc tab)
+    multiline+=("`printf -- \"%-${w}.${w}s\" \"$line\"`") # truncate/pad to terminal width
+    multiline_fmt+="%s\n"                                 # add newline
+  done
+  tput cuu $#                                             # up x lines
+  printf -- "${multiline_fmt}" "${multiline[@]}"
+}
 
 
 # Prompt!
@@ -155,6 +193,7 @@ function prompt_command
   hg_prompt
   git_prompt
   smile_prompt $EXIT
+  title_prompt
   prompt_symbol
   history -a # append previous line to disk
   PS1=$PS1${DF}" "
@@ -204,6 +243,11 @@ local DF='\[\e[0m\]'
 PS1="[${HC}\h${BBLACK}:${RC}\W${DF}]"
 }
 
+function title_prompt() {
+  #set title to hostname
+  PS1+='\[\e]2;'$HOSTNAME'\a\]'
+}
+
 function smile_prompt
 {
 local DF='\[\e[0m\]'
@@ -242,6 +286,10 @@ fi
 fi
 }
 
+function in_git_dir
+{
+  git rev-parse --is-inside-git-dir 2>/dev/null
+}
 function git_prompt
 {
 local DF='\[\e[0m\]'
@@ -305,9 +353,10 @@ function githelp(){
    # if you hit a merge conflict, DO NOT use git commit --ammend or it'll squash the conflicted commit
    # instead, just make fixes and then run git rebase --continue
 
- rebase your local branch [JIRA-401] against some upstream branch [dev]:
-   git checkout dev && git pull # update your main branch
-   git rebase dev JIRA-401     # rebase your local branch onto your main branch
+ rebase your local branch [JIRA-401] against some upstream branch [main]:
+   git checkout main && git pull                    # update your main branch
+   git rebase main JIRA-401                         # rebase your local branch onto your main branch
+   git rebase <ONTO_CHANGESET> [ <FROM_CHANGESET> ] # default from=HEAD
 
  origin/master has diverged, and you want to rebase local master onto it
    git rebase origin/master master
@@ -318,6 +367,14 @@ function githelp(){
    rbt post -u [-r <RB_NUM>] <CHANGESET>
  "
  echo "$helpz"|less
+}
+screenhelp(){
+  echo "
+  screen -ls              # list sessions
+  screen -d -R [session]  # reattach
+  Ctrl A k y              # kill session
+  Ctrl A d                # detach from session
+"
 }
 
 function gitbranch(){

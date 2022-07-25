@@ -33,7 +33,7 @@
  '(org-startup-truncated nil)
  '(package-selected-packages
    (quote
-    (magit meson-mode diff-hl yaml-mode protobuf-mode sublimity smooth-scroll smooth-scrolling hide-lines golden-ratio-scroll-screen column-marker popwin undo-tree helm-projectile helm flycheck iedit auto-complete-c-headers yasnippet auto-complete)))
+    (cmake-mode ## magit meson-mode diff-hl yaml-mode protobuf-mode sublimity smooth-scroll smooth-scrolling hide-lines golden-ratio-scroll-screen column-marker popwin undo-tree helm-projectile helm flycheck iedit auto-complete-c-headers yasnippet auto-complete)))
  '(projectile-globally-ignored-directories
    (quote
     (".idea" ".ensime_cache" ".eunit" ".git" ".hg" ".fslckout" "_FOSSIL_" ".bzr" "_darcs" ".tox" ".svn" ".stack-work" "build"))))
@@ -682,3 +682,9 @@ scroll-down-aggressively 0.01)
 ;; don't use tabs in artist mode (C-c ' will use this),
 ;; otherwise when you come back out of it tabs go to crap and you need to untabify
 (add-hook 'artist-mode-hook (lambda () (setq indent-tabs-mode nil)))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )

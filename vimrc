@@ -82,10 +82,19 @@ autocmd InsertEnter * match ExtraWhitespace /\s\+\%#\@<!$/
 autocmd InsertLeave * match ExtraWhitespace /\s\+$/
 autocmd BufWinLeave * call clearmatches()
 
+" # Fix ctrl-left/right behaviour in screen
+if $term == "screen"
+  map <esc>[1;5D <C-Left>
+  map <esc>[1;5C <C-Right>
+endif
 
 " ################################################
 " # Plugins
 " ################################################
+
+" # ctrlp - for finding files
+" ################################################
+set runtimepath^=~/.vim/bundle/ctrlp.vim
 
 " # Pathogen
 " ################################################
