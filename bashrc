@@ -5,6 +5,8 @@
 # Sources:
 # https://www.ukuug.org/events/linux2003/papers/bash_tips/
 
+export EDITOR='vi'
+
 # this allows passing arbitrary commands to be executed, useful for magic sshing!
 if ! [ -z $_BASHRC_CUSTOM_CMD ]; then
   eval $_BASHRC_CUSTOM_CMD
@@ -20,7 +22,7 @@ if ! echo blah | grep blah --exclude-dir=blah 1>/dev/null 2>/dev/null; then # ol
 else
   alias grep_exclude='grep --exclude={TAGS,tags,*#*#} --exclude-dir={build,.hg,.git,doc} '
 fi
-alias gr='grep_exclude --color=always -r' #some servers don't like recursive aliasing
+alias gr='grep_exclude --color=always -rn' #some servers don't like recursive aliasing
 alias grepc='grep_exclude --color=always'
 grepl () { grepc --line-buffered $* | less -R; }
 alias egrep='egrep --color=auto'
