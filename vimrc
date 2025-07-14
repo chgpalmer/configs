@@ -104,4 +104,10 @@ set runtimepath^=~/.vim/bundle/ctrlp.vim
 " ################################################
 "nmap <ESC>t :NERDTreeToggle<CR>
 
+" # Wrap git commits at 72 characters
+filetype indent plugin on
+au FileType gitcommit setlocal tw=72
+nmap <F2> :set textwidth=72<CR>
+inoremap <F2> <Esc>:set textwidth=72<CR>a
+
 " # /.vimrc
