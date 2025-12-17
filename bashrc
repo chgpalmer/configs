@@ -15,8 +15,8 @@ HISTCONTROL=ignoredups # dont store line if same as prev (session) line
 
 # Do user specific stuff if file exits
 ################################################################################
-if [ -f /home/$USER/.bash_x ]; then
-  source /home/$USER/.bash_x
+if [ -f ~/.bash_x ]; then
+  source ~/.bash_x
 fi
 
 
@@ -24,8 +24,8 @@ fi
 ################################################################################
 
 # Reload bashrc
-alias rebash="unalias -a; source /home/$USER/.bashrc"
-alias rebashrc="unalias -a; source /home/$USER/.bashrc"
+alias rebash="unalias -a; source ~/.bashrc"
+alias rebashrc="unalias -a; source ~/.bashrc"
 
 # Sudo/su
 alias sudo='sudo ' # makes sudo xyz also alias
@@ -65,7 +65,7 @@ alias ll='ls -lhrt --color=tty'
 alias ls='ls --color=tty'
 
 # Directory shortcuts
-alias src='cd /home/$USER/src; if [ $(ll | wc -l) -gt 20 ]; then ll | head -n20; echo "..."; else ll; fi'
+alias src='cd ~/src; if [ $(ll | wc -l) -gt 20 ]; then ll | head -n20; echo "..."; else ll; fi'
 
 # Misc colouring
 export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01' # colour gcc v4.9+
@@ -261,7 +261,7 @@ fi
 function hg_prompt
 {
 #hg_exist=$(ls -a | egrep "^\.hg$" 2> /dev/null)
-local hg_exist=$(/home/$USER/.local/bin/find_hg 2>/dev/null) # 2>... as uklogin shouts about about stale NFS handles
+local hg_exist=$(~/.local/bin/find_hg 2>/dev/null) # 2>... as uklogin shouts about about stale NFS handles
 if [ -n "$hg_exist" ]; then
 local hg_root=$hg_exist"/.hg/"
 local hg_repo=$(echo $hg_exist | sed 's|.*/||g')
@@ -295,10 +295,8 @@ function git_prompt
 local DF='\[\e[0m\]'
 local branch=$(git branch 2>/dev/null | grep '^*' | colrm 1 2)
 if [ -n "$branch" ]; then
-  # remove newline 
-  if [[ $(expr substr $PS1 $((${#PS1}-1)) 2) == '\n' ]]; then
-    PS1=$(expr substr $PS1 1 $((${#PS1}-2)))
-  fi
+  # remove trailing \n if present using parameter expansion
+  PS1="${PS1%\\n}"
   # append git bits to prompt
   PS1+="[${BROWN}$branch${DF}]\n"
 fi
@@ -453,8 +451,8 @@ itree () { #indirected graph with c and h files as separate nodes
   fi
   if ! [ -z $path ]; then path="--include $path"; fi
   # create graph
-  #echo "/home/$USER/scripts/cinclude2dot $path 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng -o /tmp/includetree.png 2>/dev/null"
-  /home/$USER/scripts/cinclude2dot $path 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng -o /tmp/includetree.png 2>/dev/null
+  #echo "~/scripts/cinclude2dot $path 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng -o /tmp/includetree.png 2>/dev/null"
+  ~/scripts/cinclude2dot $path 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng -o /tmp/includetree.png 2>/dev/null
   # view graph
   feh --scale-down --auto-zoom /tmp/includetree.png
 }
@@ -464,7 +462,7 @@ itree2 () { #indirected graph with c and h files merged to one node
   else
     DPI=$1
   fi;
-  /home/$USER/scripts/cinclude2dot --merge module 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng 2>/dev/null -o /tmp/includetree.png
+  ~/scripts/cinclude2dot --merge module 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | neato -Gdpi=$DPI -Tpng 2>/dev/null -o /tmp/includetree.png
   feh --scale-down --auto-zoom /tmp/includetree.png
 }
 itree3 () { #directed graph
@@ -473,7 +471,7 @@ itree3 () { #directed graph
   else
     DPI=$1
   fi;
-  /home/$USER/scripts/cinclude2dot 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | dot -Gdpi=$DPI -Tpng 2>/dev/null -o /tmp/includetree.png
+  ~/scripts/cinclude2dot 2>/dev/null  | sed 's|\(->.*\)|\1 [dir=back]|g' | dot -Gdpi=$DPI -Tpng 2>/dev/null -o /tmp/includetree.png
   feh --scale-down --auto-zoom /tmp/includetree.png
 }
 
