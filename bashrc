@@ -6,6 +6,16 @@
 # Session variables/settings
 ################################################################################
 export EDITOR=vi
+
+# Prefer locally-installed tools over distro ones. On several distros /bin and
+# /usr/bin precede /usr/local/bin, so an ancient packaged binary silently wins
+# over a newer one installed by hand (neovim especially).
+export PATH="/usr/local/bin:$PATH"
+
+# Force a UTF-8 locale. Sessions sometimes arrive with LANG=C, under which tmux
+# miscomputes the display width of wide glyphs and box drawing/icons garble.
+export LANG=en_US.UTF-8
+
 shopt -s checkwinsize # stops the prompt occasionally eating itself
 shopt -s histappend # append session HIST to HISTFILE, possibly not needed with 'history -a' in PROMPT_COMMAND, but it won't hurt
 HISTSIZE=20000 # history lines available in session
