@@ -93,6 +93,23 @@ link profile      "$HOME/.profile"
 link vimrc        "$HOME/.vimrc"
 link screenrc     "$HOME/.screenrc"
 link tmux.conf    "$HOME/.config/tmux/tmux.conf"
+# nvim/ is a directory; link() handles it the same way. Deliberately not added
+# to the apt list above: distro neovim is frequently 0.6.x and this config
+# needs >= 0.11, so it wants an upstream build. nvim/README.md lists what else
+# it expects on PATH (fzf >= 0.36, ripgrep, fd, clangd, pyright).
+link nvim         "$HOME/.config/nvim"
+
+# emacs/ has its own installer, which also does the symlink -- distro Emacs is
+# 27.1 on Ubuntu 22.04 and that predates eglot, tree-sitter, use-package and
+# native compilation being in core. Unlike the nvim runtime above, this one is
+# scripted: it needs no root and installs to /scratch. Run with EMACS_SKIP=1 to
+# link the other dotfiles without spending ~200MB of download on it.
+if [ -z "${EMACS_SKIP:-}" ] && [ -x "$CONFIGS_DIR/emacs/install-emacs.sh" ]; then
+  echo "-- emacs (set EMACS_SKIP=1 to skip)"
+  "$CONFIGS_DIR/emacs/install-emacs.sh" || echo "   (emacs install failed; continuing)"
+else
+  echo "-- emacs skipped"
+fi
 
 # 3. tmux plugin manager + plugins (resurrect/continuum, declared in tmux.conf).
 TPM_DIR="$HOME/.config/tmux/plugins/tpm"
