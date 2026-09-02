@@ -15,6 +15,11 @@ map("n", "<C-\\>", "<cmd>vsplit<CR><cmd>exec 'tag ' .. expand('<cword>')<CR>",
 map("n", "<F2>", "<cmd>set textwidth=72<CR>", { desc = "textwidth=72" })
 map("i", "<F2>", "<Esc><cmd>set textwidth=72<CR>a", { desc = "textwidth=72" })
 
+-- Reload every buffer that changed on disk. This happens automatically on
+-- focus and after a pause, so it is only for when you know something just
+-- rewrote a file and want it now. Modified buffers are never touched.
+map("n", "<leader>r", "<cmd>checktime<CR>", { desc = "Reload changed files" })
+
 -- Clear search highlight. hlsearch is on, so this gets used a lot.
 map("n", "<Esc>", "<cmd>nohlsearch<CR>", { desc = "Clear search highlight" })
 
