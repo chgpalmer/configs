@@ -157,7 +157,14 @@ end
 --
 -- C has several ways to call a function without naming it, and they need
 -- different treatment. Each entry below takes a function and returns the
--- places that reach it indirectly. Adding a pattern means adding an entry.
+-- places that reach it indirectly. Adding a shape means adding an entry.
+--
+-- Only the ops/vtable shape is implemented, because it is the only one this
+-- codebase uses: a listener is a struct of named function pointers registered
+-- into a list, which is the same shape as a driver ops table. A bare function
+-- pointer handed to a registrar and stored in an array would need its own
+-- entry -- there is no shared symbol linking registration to dispatch, only an
+-- assignment inside the registrar body.
 -- ---------------------------------------------------------------------------
 
 local refs_cache = {}
@@ -241,81 +248,7 @@ local function pattern_ops(item, bufnr)
   return out
 end
 
--- PATTERN 2: callback registered with a registrar function.
---
---     add_listener(on_change);            -- registration, as an ARGUMENT
---     ...
---     static listener_t listeners[N];     -- storage inside the registrar
---     listeners[n++] = cb;
---     listeners[i](&status);              -- dispatch
---
--- Unlike the ops pattern there is no shared symbol: the registration names the
--- registrar, the dispatch names the array, and the only thing connecting them
--- is an assignment inside the registrar's body. So the registrar is read to
--- find what its parameter is stored into, and that variable is then the anchor.
---
--- Heuristic, and it fails quietly if the registrar wraps the callback in a
--- struct, hands it to another module, or stores it somewhere not named on a
--- single line. Rows are labelled with the registrar so a guess is visible.
-local function pattern_callback(item, bufnr)
-  local out = {}
-  local start = item.selectionRange and item.selectionRange.start
-  if not start then
-    return out
-  end
-  for _, ref in ipairs(refs_at(bufnr, start)) do
-    local rb = load_buf(vim.uri_to_fname(ref.uri))
-    local lnum = ref.range.start.line
-    local line = line_at(rb, lnum)
-    -- The function passed as a bare argument: "register(name)" and not
-    -- "name(" itself, which would be an ordinary call.
-    local reg = line:match("([%w_]+)%s*%([^()]*%f[%w_]" .. vim.pesc(item.name) .. "%f[^%w_]")
-    if reg and reg ~= item.name then
-      local rcol = line:find(reg .. "%s*%(")
-      -- NB: "x and f()" truncates f's multiple returns to one, which
-      -- silently left rrange nil and made this whole pattern fail inside a
-      -- pcall, with nothing to show for it.
-      local rpath, rrange
-      if rcol then
-        rpath, rrange = def_at(rb, lnum, rcol - 1)
-      end
-      if rpath then
-        local regb = load_buf(rpath)
-        -- Read the registrar and find what its parameter is stored into.
-        local head = line_at(regb, rrange.start.line)
-        local param = head:match("%(%s*[%w_%s%*]-([%w_]+)%s*%)")
-        if param then
-          for i = rrange.start.line, math.min(rrange.start.line + 40, vim.api.nvim_buf_line_count(regb) - 1) do
-            local body = line_at(regb, i)
-            local store = body:match("([%w_]+)%s*%[[^%]]*%]%s*=%s*" .. param .. "%s*;")
-              or body:match("([%w_]+)%s*=%s*" .. param .. "%s*;")
-            if store then
-              local scol = body:find(store)
-              local spath, srange = def_at(regb, i, scol - 1)
-              if spath then
-                local sb = load_buf(spath)
-                for _, use in ipairs(refs_at(sb, srange.start)) do
-                  local upath = vim.uri_to_fname(use.uri)
-                  local ub = load_buf(upath)
-                  local ul = use.range.start.line
-                  local uline = line_at(ub, ul)
-                  -- Calls through the storage, not assignments to it.
-                  if uline:match(store .. "%s*%[[^%]]*%]%s*%(") or uline:match(store .. "%s*%(") then
-                    table.insert(out, { path = upath, lnum = ul + 1, label = reg .. "()" })
-                  end
-                end
-              end
-              break
-            end
-          end
-        end
-      end
-    end
-  end
-  return out
-end
-
-local PATTERNS = { pattern_ops, pattern_callback }
+local PATTERNS = { pattern_ops }
 
 local function indirect_callers(item, bufnr)
   local out, seen = {}, {}
