@@ -46,19 +46,53 @@ local MAX_BRIDGES = 5
 -- for something the compiler actually knows.
 -- ---------------------------------------------------------------------------
 
+-- Files opened purely to ask the language server about them.
+--
+-- Loading a buffer sends didOpen, and the server then builds and RETAINS an
+-- AST for that translation unit. A deep traversal touches many files, so
+-- holding them all is a genuine leak: on a unit whose macros expand hugely it
+-- is enough to exhaust memory and get the server killed, which then leaves
+-- swap files behind and breaks even go-to-definition.
+--
+-- So: remember which buffers this module created, and wipe those -- and only
+-- those -- when the traversal finishes. Buffers the user already had open are
+-- left alone.
 local loaded = {}
+local created = {}
+
 local function load_buf(path)
   if loaded[path] then
     return loaded[path]
   end
+  local existing = vim.fn.bufnr(path)
   local bufnr = vim.fn.bufadd(path)
-  -- Loading a file that another nvim has open would otherwise stop on the
-  -- "found a swap file" prompt, in the middle of a background walk where there
-  -- is nobody to answer it. These buffers are only read, never written.
+  -- A file another nvim has open would otherwise stop on the "found a swap
+  -- file" prompt, mid-traversal, with nobody there to answer it. These buffers
+  -- are only ever read.
   vim.bo[bufnr].swapfile = false
+  local was_loaded = vim.api.nvim_buf_is_loaded(bufnr)
   vim.fn.bufload(bufnr)
   loaded[path] = bufnr
+  if existing == -1 and not was_loaded then
+    created[bufnr] = true
+  end
   return bufnr
+end
+
+-- Hand the translation units back to the language server. Anything visible in
+-- a window is left alone, in case a jump landed there.
+local function release_buffers()
+  local visible = {}
+  for _, w in ipairs(vim.api.nvim_list_wins()) do
+    visible[vim.api.nvim_win_get_buf(w)] = true
+  end
+  for bufnr in pairs(created) do
+    if vim.api.nvim_buf_is_valid(bufnr) and not visible[bufnr] then
+      pcall(vim.api.nvim_buf_delete, bufnr, { force = true, unload = false })
+    end
+  end
+  created = {}
+  loaded = {}
 end
 
 -- The function containing a given line, found by reading the buffer.
@@ -584,6 +618,11 @@ function M.open(direction, bridge)
       -- Direct callers are index-answered and land in ~100ms; bridged ones
       -- need an AST per file and follow behind.
       fzf.fzf_exec(function(cb)
+        local function finished()
+          release_buffers()
+          cb()
+        end
+
         local function emit(rows)
           for _, e in ipairs(to_entries(rows)) do
             cb(e)
@@ -594,7 +633,7 @@ function M.open(direction, bridge)
           function(rows, leaves)
             emit(rows)
             if not (bridge and direction == "incoming") then
-              cb()
+              finished()
               return
             end
             -- Bridge only where the chain has actually stopped. A node with
@@ -610,7 +649,7 @@ function M.open(direction, bridge)
                   cb(string.format("%s:1:1:%s[%d more leaves not followed: bridge budget]",
                     vim.uri_to_fname(first.uri), string.rep("  ", 1), #queue + 1))
                 end
-                cb()
+                finished()
                 return
               end
               local nb = load_buf(vim.uri_to_fname(leaf.node.item.uri))

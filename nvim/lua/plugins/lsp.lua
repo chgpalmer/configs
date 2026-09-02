@@ -24,7 +24,13 @@ return {
           "--clang-tidy",
           "--header-insertion=never", -- do not auto-add #includes
           "--completion-style=detailed",
-          "--pch-storage=memory",
+          -- Preambles on disk, not in RAM. "memory" is faster but holds a
+          -- precompiled header per translation unit for as long as the server
+          -- runs, and closing the file does not give it back. On a machine
+          -- with other work on it that is enough to get clangd OOM-killed
+          -- mid-traversal, which then leaves swap files behind and breaks
+          -- go-to-definition until they are cleared.
+          "--pch-storage=disk",
           "-j=8",
         },
         -- Stop clangd walking up past the repo root looking for a project.
