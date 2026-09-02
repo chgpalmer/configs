@@ -197,6 +197,26 @@ return {
     },
   },
 
+  -- Render markdown in the buffer -- headings, tables, code blocks, links --
+  -- rather than showing the raw syntax. Useful for READMEs and for the
+  -- markdown that agents tend to leave lying around.
+  --
+  -- Deliberately NOT lazy-loaded: the plugin does its own lazy loading, and
+  -- wrapping it in another layer is what its documentation warns against. It
+  -- has to load after the colourscheme to pick up highlight groups, which the
+  -- tokyonight spec above guarantees with priority 1000.
+  --
+  -- No hard dependencies. It needs the markdown and markdown_inline treesitter
+  -- parsers, which nvim ships with, and picks up nvim-web-devicons for icons
+  -- if present -- it is, as a dependency of the explorer and the picker.
+  {
+    "OXY2DEV/markview.nvim",
+    lazy = false,
+    keys = {
+      { "<leader>cM", "<cmd>Markview toggle<CR>", desc = "Toggle markdown rendering" },
+    },
+  },
+
   -- LSP progress in the corner, so "the server is still indexing" is
   -- distinguishable from "the server is broken".
   {

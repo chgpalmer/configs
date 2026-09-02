@@ -23,6 +23,7 @@ backup.
 - `clangd` and `pyright-langserver` on PATH for C and Python
 - Optional: `clang-format`, `black`, `isort`, `stylua` for `<leader>cf`
 - A **Nerd Font** selected in your terminal, or the icons render as blanks.
+  Markdown rendering also uses them; `<leader>cM` toggles it off.
   In a terminal → ssh → tmux chain, the font is set by the terminal emulator
   at the near end; nothing on the remote host affects it.
 
