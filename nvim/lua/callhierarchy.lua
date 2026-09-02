@@ -152,81 +152,160 @@ local function enclosing_item(client, path, lnum)
   end
 end
 
--- Find the indirect callers of `item` by asking clangd, and nothing else.
+-- ---------------------------------------------------------------------------
+-- Indirect-call patterns.
 --
--- The chain is:
---   1. references to the function      -> the ".connect = tcp_connect" assignment
---   2. definition of the field there   -> "int (*connect)(ctx_t*)" in struct driver_ops
---   3. references to THAT declaration  -> every use of that field
---
--- Step 3 is the important one. clangd's index is typed, so it returns uses of
--- driver_ops::connect only -- not codec_ops::connect, not link_ops::connect,
--- despite all three being spelled "init". Searching text for "->init(" cannot
--- make that distinction, which is why the previous ripgrep version needed a
--- per-site type check and still drowned in false positives.
---
--- It also sees through the preprocessor: a table reached via
--- "#define platform_ops tcp_driver_ops" inside a macro shows up here,
--- where grep finds nothing at all.
---
--- Out of reach is a runtime copy such as "phy->mdi->ops = port->mdi_ops". That
--- does not need tracing though: what matters is the SET of values the pointer
--- can hold, which is the set of instances of that struct type linked into the
--- image. Where there is one, the dispatch is determined rather than unknown.
+-- C has several ways to call a function without naming it, and they need
+-- different treatment. Each entry below takes a function and returns the
+-- places that reach it indirectly. Adding a pattern means adding an entry.
+-- ---------------------------------------------------------------------------
+
 local refs_cache = {}
-local function indirect_callers(item, bufnr)
-  local out = {}
-
-  local function refs(b, pos)
-    -- ~150ms each, and the same field declaration gets asked about once per
-    -- function registered into that table. Cache on position.
-    local key = vim.uri_from_bufnr(b) .. ":" .. pos.line .. ":" .. pos.character
-    if refs_cache[key] then
-      return refs_cache[key]
-    end
-    local r = vim.lsp.buf_request_sync(b, "textDocument/references", {
-      textDocument = { uri = vim.uri_from_bufnr(b) },
-      position = pos,
-      context = { includeDeclaration = false },
-    }, 5000)
-    local acc = {}
-    for _, v in pairs(r or {}) do
-      vim.list_extend(acc, v.result or {})
-    end
-    refs_cache[key] = acc
-    return acc
+local function refs_at(bufnr, pos)
+  local key = vim.uri_from_bufnr(bufnr) .. ":" .. pos.line .. ":" .. pos.character
+  if refs_cache[key] then
+    return refs_cache[key]
   end
+  local r = vim.lsp.buf_request_sync(bufnr, "textDocument/references", {
+    textDocument = { uri = vim.uri_from_bufnr(bufnr) },
+    position = pos,
+    context = { includeDeclaration = false },
+  }, 5000)
+  local acc = {}
+  for _, v in pairs(r or {}) do
+    vim.list_extend(acc, v.result or {})
+  end
+  refs_cache[key] = acc
+  return acc
+end
 
+local function def_at(bufnr, line, col)
+  local d = vim.lsp.buf_request_sync(bufnr, "textDocument/definition", {
+    textDocument = { uri = vim.uri_from_bufnr(bufnr) },
+    position = { line = line, character = col },
+  }, 5000)
+  for _, v in pairs(d or {}) do
+    local r = (v.result or {})[1]
+    if r then
+      return vim.uri_to_fname(r.uri or r.targetUri), (r.range or r.targetSelectionRange)
+    end
+  end
+end
+
+local function line_at(bufnr, lnum)
+  return (vim.api.nvim_buf_get_lines(bufnr, lnum, lnum + 1, false) or {})[1] or ""
+end
+
+-- PATTERN 1: ops struct / vtable.
+--
+--     struct driver_ops ops = { .connect = tcp_connect };   -- registration
+--     ctx->ops->connect(ctx, ...);                          -- dispatch
+--
+-- Both ends reference the same field DECLARATION, so one typed lookup links
+-- them: clangd returns uses of driver_ops::connect only, never another
+-- struct's connect. It sees through the preprocessor too, so a table reached
+-- via a #define inside a macro is found where text search finds nothing.
+--
+-- Dispatch is NOT required to look like "->connect(". A macro that generates
+-- the dispatcher writes the field name only as a macro argument -- the call
+-- itself says "_var->_event(...)" -- so anything that is not a registration is
+-- treated as a candidate, and resolving its enclosing function decides.
+local function pattern_ops(item, bufnr)
+  local out = {}
   local start = item.selectionRange and item.selectionRange.start
   if not start then
     return out
   end
-
-  for _, ref in ipairs(refs(bufnr, start)) do
+  for _, ref in ipairs(refs_at(bufnr, start)) do
     local rb = load_buf(vim.uri_to_fname(ref.uri))
     local lnum = ref.range.start.line
-    local line = (vim.api.nvim_buf_get_lines(rb, lnum, lnum + 1, false) or {})[1] or ""
-    -- Only a designated initialiser registers a function into a table.
-    local field = line:match("%.%s*([%w_]+)%s*=%s*" .. vim.pesc(item.name))
-    local col = field and line:find("%." .. field)
+    local line = line_at(rb, lnum)
+    local field = line:match("[%.>]%s*([%w_]+)%s*=%s*" .. vim.pesc(item.name))
+    local col = field and line:find("[%.>]" .. field)
     if col then
-      local defs = vim.lsp.buf_request_sync(rb, "textDocument/definition", {
-        textDocument = { uri = vim.uri_from_bufnr(rb) },
-        position = { line = lnum, character = col },
-      }, 5000)
-      for _, v in pairs(defs or {}) do
-        local d = (v.result or {})[1]
-        if d then
-          local drange = d.range or d.targetSelectionRange
-          local db = load_buf(vim.uri_to_fname(d.uri or d.targetUri))
-          for _, use in ipairs(refs(db, drange.start)) do
-            local upath = vim.uri_to_fname(use.uri)
-            local ub = load_buf(upath)
-            local ul = use.range.start.line
-            local uline = (vim.api.nvim_buf_get_lines(ub, ul, ul + 1, false) or {})[1] or ""
-            -- Keep the calls, skip the registrations.
-            if uline:match("[%->%.]" .. field .. "%s*%(") then
-              table.insert(out, { path = upath, lnum = ul + 1, field = field })
+      local dpath, drange = def_at(rb, lnum, col)
+      if dpath then
+        local db = load_buf(dpath)
+        for _, use in ipairs(refs_at(db, drange.start)) do
+          local upath = vim.uri_to_fname(use.uri)
+          local ub = load_buf(upath)
+          local ul = use.range.start.line
+          -- Everything except the registrations themselves.
+          if not line_at(ub, ul):match("[%.>]%s*" .. field .. "%s*=") then
+            table.insert(out, { path = upath, lnum = ul + 1, label = "->" .. field })
+          end
+        end
+      end
+    end
+  end
+  return out
+end
+
+-- PATTERN 2: callback registered with a registrar function.
+--
+--     add_listener(on_change);            -- registration, as an ARGUMENT
+--     ...
+--     static listener_t listeners[N];     -- storage inside the registrar
+--     listeners[n++] = cb;
+--     listeners[i](&status);              -- dispatch
+--
+-- Unlike the ops pattern there is no shared symbol: the registration names the
+-- registrar, the dispatch names the array, and the only thing connecting them
+-- is an assignment inside the registrar's body. So the registrar is read to
+-- find what its parameter is stored into, and that variable is then the anchor.
+--
+-- Heuristic, and it fails quietly if the registrar wraps the callback in a
+-- struct, hands it to another module, or stores it somewhere not named on a
+-- single line. Rows are labelled with the registrar so a guess is visible.
+local function pattern_callback(item, bufnr)
+  local out = {}
+  local start = item.selectionRange and item.selectionRange.start
+  if not start then
+    return out
+  end
+  for _, ref in ipairs(refs_at(bufnr, start)) do
+    local rb = load_buf(vim.uri_to_fname(ref.uri))
+    local lnum = ref.range.start.line
+    local line = line_at(rb, lnum)
+    -- The function passed as a bare argument: "register(name)" and not
+    -- "name(" itself, which would be an ordinary call.
+    local reg = line:match("([%w_]+)%s*%([^()]*%f[%w_]" .. vim.pesc(item.name) .. "%f[^%w_]")
+    if reg and reg ~= item.name then
+      local rcol = line:find(reg .. "%s*%(")
+      -- NB: "x and f()" truncates f's multiple returns to one, which
+      -- silently left rrange nil and made this whole pattern fail inside a
+      -- pcall, with nothing to show for it.
+      local rpath, rrange
+      if rcol then
+        rpath, rrange = def_at(rb, lnum, rcol - 1)
+      end
+      if rpath then
+        local regb = load_buf(rpath)
+        -- Read the registrar and find what its parameter is stored into.
+        local head = line_at(regb, rrange.start.line)
+        local param = head:match("%(%s*[%w_%s%*]-([%w_]+)%s*%)")
+        if param then
+          for i = rrange.start.line, math.min(rrange.start.line + 40, vim.api.nvim_buf_line_count(regb) - 1) do
+            local body = line_at(regb, i)
+            local store = body:match("([%w_]+)%s*%[[^%]]*%]%s*=%s*" .. param .. "%s*;")
+              or body:match("([%w_]+)%s*=%s*" .. param .. "%s*;")
+            if store then
+              local scol = body:find(store)
+              local spath, srange = def_at(regb, i, scol - 1)
+              if spath then
+                local sb = load_buf(spath)
+                for _, use in ipairs(refs_at(sb, srange.start)) do
+                  local upath = vim.uri_to_fname(use.uri)
+                  local ub = load_buf(upath)
+                  local ul = use.range.start.line
+                  local uline = line_at(ub, ul)
+                  -- Calls through the storage, not assignments to it.
+                  if uline:match(store .. "%s*%[[^%]]*%]%s*%(") or uline:match(store .. "%s*%(") then
+                    table.insert(out, { path = upath, lnum = ul + 1, label = reg .. "()" })
+                  end
+                end
+              end
+              break
             end
           end
         end
@@ -236,6 +315,24 @@ local function indirect_callers(item, bufnr)
   return out
 end
 
+local PATTERNS = { pattern_ops, pattern_callback }
+
+local function indirect_callers(item, bufnr)
+  local out, seen = {}, {}
+  for _, find in ipairs(PATTERNS) do
+    local ok, sites = pcall(find, item, bufnr)
+    if ok then
+      for _, s in ipairs(sites) do
+        local k = s.path .. ":" .. s.lnum
+        if not seen[k] then
+          seen[k] = true
+          table.insert(out, s)
+        end
+      end
+    end
+  end
+  return out
+end
 
 -- The implementations behind a field dispatch, e.g. "ops->connect(...)".
 --
@@ -387,7 +484,7 @@ local function walk_direct(client, root, direction, indent, bridge, done)
         left = string.rep("  ", depth + indent)
           .. ((depth > 0 or indent > 0) and arrow or "")
           .. n.item.name
-          .. (n.bridge and (" [via ->" .. n.bridge .. "]") or ""),
+          .. (n.bridge and (" [via " .. n.bridge .. "]") or ""),
         right = vim.fn.fnamemodify(path, ":t") .. ":" .. lnum,
         path = path,
         lnum = lnum,
@@ -399,14 +496,45 @@ local function walk_direct(client, root, direction, indent, bridge, done)
       -- always has a child -- a variable, not a caller. Counting those as
       -- callers made the chain dead-end in the very table the bridge exists to
       -- cross.
-      local callers = 0
+      local callers, registered = 0, false
       for _, c in ipairs(n.children) do
         -- 12 = Function, 6 = Method. Anything else is data.
         if c.item.kind == 12 or c.item.kind == 6 then
-          callers = callers + 1
+          -- ...and it has to actually CALL, not merely mention. A function
+          -- passed to a registrar -- "add_listener(on_change)" -- is reported
+          -- as an incoming call from the registering function, which is a
+          -- reference, not a call. Counting it made the node look like it had
+          -- callers, so the bridge never ran on exactly the registrations it
+          -- exists to follow. Reading the call site settles it: a real call
+          -- writes the name followed by an open paren.
+          local calls = false
+          for _, r in ipairs(c.ranges or {}) do
+            local ok, cb = pcall(load_buf, vim.uri_to_fname(c.item.uri))
+            if ok then
+              local l = (vim.api.nvim_buf_get_lines(cb, r.start.line, r.start.line + 1, false) or {})[1] or ""
+              if l:match("%f[%w_]" .. vim.pesc(n.item.name) .. "%f[^%w_]%s*%(") then
+                calls = true
+              end
+            end
+          end
+          if calls or #(c.ranges or {}) == 0 then
+            callers = callers + 1
+          else
+            -- Referenced without being called: its address was taken, which
+            -- means it was registered somewhere.
+            registered = true
+          end
+        else
+          -- A non-function "caller" is a table the function was put into.
+          registered = true
         end
       end
-      if callers == 0 then
+      -- Bridge when the chain has stopped OR when the function is registered
+      -- somewhere, because both can be true at once: a function can be called
+      -- directly AND installed as a callback, and only following both gives
+      -- the whole picture. Ordinary functions trip neither test and cost
+      -- nothing.
+      if callers == 0 or registered then
         leaves[#leaves + 1] = { node = n, row = #rows, depth = depth + indent }
       end
       for _, c in ipairs(n.children) do
@@ -567,7 +695,7 @@ function M.open(direction, bridge)
                 if it then
                   walk_direct(client,
                     { item = it, ranges = { { start = { line = site.lnum - 1, character = 0 } } },
-                      children = {}, bridge = site.field },
+                      children = {}, bridge = site.label },
                     direction, leaf.depth + 1, false,
                     function(rows2)
                       emit(rows2)
